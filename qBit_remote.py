@@ -155,7 +155,6 @@ class Bot:
             self.logger.info("User tried to use reconnect without any previous info.")
             update.message.reply_text("You don't have any previous info. \nPlease type /start to connect")
 
-
     def cancel(self, bot, update):
         user = update.message.from_user
         self.logger.info("User %s canceled the conversation." % user.first_name)
@@ -172,7 +171,10 @@ class Bot:
                 self.logger.info("%s tried listing downloading." % update.message.from_user)
                 if len(self.qb.torrents()) > 0:
                     for torrent in self.qb.torrents(filter="downloading"):
-                        output += "--%s, %s%%\n" % (torrent["name"], int(torrent["progress"]*100))
+                        output += "%s\n | Size: %.2f GB\n | Download Speed: %.1f MB/s\n | Downloaded: %s%%\n\n" % (torrent["name"],
+                            float(torrent["size"]/1073741824),
+                            float(torrent["dlspeed"]/1048576),
+                            int(torrent["progress"]*100))
                     update.message.reply_text("Torrents currently downloading:\n%s" % output)
                 else:
                     update.message.reply_text("There is no torrents to list.")
@@ -191,6 +193,26 @@ class Bot:
                 "Ups. Connection to qBit Client is lost. \nRetrying to connect with previous info.")
             return self.reconnect(bot=bot, update=update)
 
+
+# key            | type    | Description
+# ---------------------------------------
+# hash            string    Torrent hash
+# name            string    Torrent name
+# size            integer   Torrent size (bytes)
+# progress        float     Torrent progress (%/100)
+# dlspeed         integer   Torrent download speed (bytes/s)
+# upspeed         integer   Torrent upload speed (bytes/s)
+# priority        integer   Torrent priority. Returns -1 if queuing is disabled
+# num_seeds       integer   Torrent seeds connected to
+# num_complete    integer   Torrent seeds in the swarm
+# num_leechs      integer   Torrent leechers connected to
+# num_incomplete  integer   Torrent leechers in the swarm
+# ratio           float     Torrent share ratio. Max ratio value: 9999.
+# eta             integer   Torrent ETA (seconds)
+# state           string    Torrent state. See possible values here below
+# seq_dl          bool      True if sequential download is enabled
+# f_l_piece_prio  bool      True if first last piece are prioritized
+
     def list(self, bot, update):
         user = update.message.from_user
         try:
@@ -199,7 +221,11 @@ class Bot:
                 self.logger.info("%s tried listing." % update.message.from_user)
                 if len(self.qb.torrents()) > 0:
                     for torrent in self.qb.torrents():
-                        output += "--%s, %s, %s%%\n" % (torrent["name"],torrent["state"].upper(),int(torrent["progress"]*100))
+                        output += "%s\n | Status: %s\n | Size: %.2f GB\n | Download Speed: %.1f MB/s\n | Downloaded: %s%%\n\n" % (torrent["name"],
+                            torrent["state"].upper(),
+                            float(torrent["size"]/1073741824),
+                            float(torrent["dlspeed"]/1048576),
+                            int(torrent["progress"]*100))
                     update.message.reply_text("Torrents currently downloading:\n%s" % output)
                 else:
                     update.message.reply_text("There is no torrents to list.")
